@@ -27,7 +27,7 @@ class PushReleaseTask extends DefaultTask {
         if(!result.success) {
             def message = result.remoteMessage.orElse("Unknown error during push")
             logger.error("remote message: ${message}")
-            throw new ReleaseFailedException(message)
+            throw new PushFailedException(message)
         }
     }
 
