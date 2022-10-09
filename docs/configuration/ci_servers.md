@@ -8,10 +8,6 @@ CI servers is treated as *trusted* environment, thus there is no harm in
 disabling checks that need to interact with git (like uncommitted files
 check or ahead of remote check).
 
-## Travis CI
-
-TBD
-
 ## Jenkins
 
 Jenkins and `axion-release` cooperate nicely. However, because Jenkins
@@ -101,6 +97,17 @@ Your workflow needs to use `actions/checkout@v2` with configuration to [fetch ta
         with:
           fetch-depth: 0
 
+When you have a lot of tags/commit you can speed up your build - plugin successfully works using local git shallow repository but you must run `git fetch --tags --unshallow` before running `./gradlew release` - that will ensure the plugin has all the info it needs to run. 
+
+    steps:
+        - uses: actions/checkout@v2
+        - name: Publish using Axion
+          run: |
+              # Fetch a full copy of the repo, as required by release plugin:
+              git fetch --tags --unshallow
+              # Run release:
+              ./gradlew release
+
 In order to push tags into the repository release step must use GitHub actor and token:
 
       - name: Release
@@ -123,10 +130,12 @@ Example:
       image: ....
       script: 
        - git remote set-url origin ${CI_SERVER_URL}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}.git
-       - ./gradlew release -Prelease.disableChecks -Prelease.pushTagsOnly -Prelease.customUsername=${PROJECT_ACCESS_TOKEN_BOT_NAME} -Prelease.customPassword=${PROJECT_ACCESS_TOKEN}
+       - ./gradlew release -Prelease.disableChecks -Prelease.pushTagsOnly -Prelease.overriddenBranchName=${CI_COMMIT_BRANCH} -Prelease.customUsername=${PROJECT_ACCESS_TOKEN_BOT_NAME} -Prelease.customPassword=${PROJECT_ACCESS_TOKEN}
 
 NOTE: You need to set the git remote url first, as GitLab's default cloned project url will have added the non repo-write permision [gitlab-ci-token](https://docs.gitlab.com/ee/ci/jobs/ci_job_token.html) to the origin url.
 
 
 Disabling checks is necessary because `axion-release` is not able to verify if current commit is ahead of remote. 
 Setting pushTagsOnly ensures that git will not throw an error by attempting to push commits while not working on a branch.
+
+Since Gitlab will do a detached head checkout, the branch name has to be overridden when `versionWithBranch` is used.
