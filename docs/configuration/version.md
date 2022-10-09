@@ -27,21 +27,21 @@ calculating current version. Prefix can be set using
 
     scmVersion {
         tag {
-            prefix = 'my-prefix'
+            prefix.set("my-prefix")
         }
     }
 
-Default prefix is `release`.
+Default prefix is `v`.
 
 There is also an option to set prefix per-branch (i.e. to use different
 version prefix on `legacy-` branches):
 
     scmVersion {
         tag {
-            prefix = 'default-prefix'
-            branchPrefix = [
-                'legacy.*' : 'legacy-prefix'
-            ]
+            prefix.set("default-prefix")
+            branchPrefix.putAll( [
+                "legacy.*" : "legacy-prefix"
+            ])
         }
     }
 
@@ -87,7 +87,7 @@ analysed.
 In order to activate this feature:
 
     scmVersion {
-        useHighestVersion = true
+        useHighestVersion.set(true)
     }
 
 With a tree similar to this:
@@ -131,7 +131,7 @@ deserialization config object and position in SCM:
 
     scmVersion {
         tag {
-            deserialize = {config, position, tagName -> ...}
+            deserialize({config, position, tagName -> ...})
         }
     }
 
@@ -162,7 +162,7 @@ serialization config object and version:
 
     scmVersion {
         tag {
-            serialize = {config, version -> ...}
+            serialize({config, version -> ...})
         }
     }
 
@@ -177,7 +177,7 @@ that will construct initial version:
 
     scmVersion {
         tag {
-            initialVersion = {config, position -> ...}
+            initialVersion({config, position -> ...})
         }
     }
 
@@ -201,7 +201,7 @@ You can set one of predefined rules via `scmVersion.versionIncrementer`
 method:
 
     scmVersion {
-        versionIncrementer 'incrementPatch'
+        versionIncrementer('incrementPatch')
     }
 
 Or via `release.versionIncrementer` command line argument, which
@@ -212,14 +212,14 @@ overrides any other incrementer settings:
 If rule accepts parameters, they can be passed via configuration map:
 
     scmVersion {
-        versionIncrementer 'someIncrementer', [:]
+        versionIncrementer('someIncrementer', [:])
     }
 
 Alternatively you can specify a custom rule by setting a closure that
 would accept a context object and return a `Version` object:
 
     scmVersion {
-        versionIncrementer { context -> ... }
+        versionIncrementer({ context -> ... })
     }
 
 The context object passed to closure contains the following:
@@ -227,18 +227,18 @@ The context object passed to closure contains the following:
 -   *currentVersion* - current `Version` object that should be used to
     calculate next version ([Version
     API](https://github.com/zafarkhaja/jsemver/blob/1f4996ea3dab06193c378fd66fd4f8fdc8334cc6/src/main/java/com/github/zafarkhaja/semver/Version.java))
--   *position* - widely used position object, for more see [ScmPosition](https://github.com/allegro/axion-release-plugin/blob/master/src/main/groovy/pl/allegro/tech/build/axion/release/domain/scm/ScmPosition.groovy)
+-   *position* - widely used position object, for more see [ScmPosition](https://github.com/allegro/axion-release-plugin/blob/main/src/main/java/pl/allegro/tech/build/axion/release/domain/scm/ScmPosition.java)
 
 You can also specify different incrementers per branch. They can be
 either closure, name of predefined incrementer or name and list of
 arguments in case predefined incrementer requires configuration:
 
     scmVersion {
-        branchVersionIncrementer = [
+        branchVersionIncrementer.putAll( [
             'feature/.*' : 'incrementMinor',
             'bugfix/.*' : { c -> c.currentVersion.incrementPatchVersion() },
             'legacy/.*' : [ 'incrementMinorIfNotOnRelease', [releaseBranchPattern: 'legacy/release.*'] ]
-        ]
+        ])
     }
 
 If none matches current branch, incrementer set in `versionIncrementer`
@@ -250,7 +250,7 @@ This rule uses additional parameter `releaseBranchPattern` (by default
 it's set to `v/.+`):
 
     scmVersion {
-        versionIncrementer 'incrementMinorIfNotOnRelease', [releaseBranchPattern: 'v.*']
+        versionIncrementer('incrementMinorIfNotOnRelease', [releaseBranchPattern: 'v.*'])
     }
 
 ### incrementPrerelease
@@ -259,7 +259,7 @@ This rule uses additional parameter `initialPreReleaseIfNotOnPrerelease` (by def
 it's empty):
 
     scmVersion {
-        versionIncrementer 'incrementPrerelease', [initialPreReleaseIfNotOnPrerelease: 'rc1']
+        versionIncrementer('incrementPrerelease', [initialPreReleaseIfNotOnPrerelease: 'rc1'])
     }
 
 ## Decorating
@@ -273,7 +273,7 @@ request if you have something useful!). Decoration phase is conducted by
 method:
 
     scmVersion {
-        versionCreator 'versionWithBranch'
+        versionCreator('versionWithBranch')
     }
 
 Or via `release.versionCreator` command line argument, which overrides
@@ -285,10 +285,10 @@ You can also set decorators per branches that match specific regular
 expression:
 
     scmVersion {
-        branchVersionCreator = [
+        branchVersionCreator.putAll( [
             'feature/.*': { version, position -> ...},
             'bugfix/.*': 'simple'
-        ]
+        ])
     }
 
 Per-branch version creators must be closures, there is no support for
@@ -304,16 +304,16 @@ This is the default version creator that does nothing:
 It might be useful when you want some branches to do *nothing*:
 
     scmVersion {
-        branchVersionCreator = [
+        branchVersionCreator.putAll([
             'feature/.*': { version, position -> ...},
             'release/.*': 'simple'
-        ]
+        ])
     }
 
 #### versionWithBranch
 
     scmVersion {
-        versionCreator 'versionWithBranch'
+        versionCreator('versionWithBranch')
     }
 
 This version creator appends branch name to version unless you are on
@@ -329,7 +329,7 @@ Custom version creators can be implemented by creating closure:
     {version, position -> ...}
 
 -   version - string version resolved by previous steps
--   position - [ScmPosition](https://github.com/allegro/axion-release-plugin/blob/master/src/main/groovy/pl/allegro/tech/build/axion/release/domain/scm/ScmPosition.groovy) object
+-   position - [ScmPosition](https://github.com/allegro/axion-release-plugin/blob/main/src/main/java/pl/allegro/tech/build/axion/release/domain/scm/ScmPosition.java) object
 
 ### Snapshot
 
@@ -338,7 +338,7 @@ By default, when not on tag, `-SNAPSHOT` suffix is appended
 It can be customized by
 
     scmVersion {
-       snapshotCreator: { version, position -> ...}
+       snapshotCreator({ version, position -> ...})
     }
 
 Snapshot creator can be implemented by creating closure:
@@ -346,7 +346,7 @@ Snapshot creator can be implemented by creating closure:
     {version, position -> ...}
 
 -   version - string version resolved by previous steps
--   position - [ScmPosition](https://github.com/allegro/axion-release-plugin/blob/master/src/main/groovy/pl/allegro/tech/build/axion/release/domain/scm/ScmPosition.groovy) object
+-   position - [ScmPosition](https://github.com/allegro/axion-release-plugin/blob/main/src/main/java/pl/allegro/tech/build/axion/release/domain/scm/ScmPosition.java) object
 
 
 ## Sanitization
@@ -362,5 +362,5 @@ You can switch off version sanitization via `scmVersion.sanitizeVersion`
 property:
 
     scmVersion {
-        sanitizeVersion = false
+        sanitizeVersion.set(false)
     }
